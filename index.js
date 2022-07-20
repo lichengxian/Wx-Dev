@@ -1,55 +1,39 @@
+import { query, ajax, isWechat } from "./utils.js";
+import { initWxSDK } from "./wxsdk.js";
+import { shareURL, authURL } from "./constant.js";
+import { showOpenTag } from "./openTagBtn.js";
+
 const authBtn = document.getElementById("authBtn");
-const list = document.getElementById("list");
 const openId = document.getElementById("openId");
 const UserName = document.getElementById("UserName");
 const UserPhoto = document.getElementById("UserPhoto");
-// 公众号信息
-const appId = "wxbcc1eb17b5d50398";
-// 回调页
-const cbURL = encodeURIComponent(`http://127.0.0.1:5500/`);
-// 分享链接，静默授权
-const shareURL = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appId}&redirect_uri=${cbURL}&response_type=code&scope=snsapi_base#wechat_redirect`;
-// 主动授权链接，额外带state参数
-const authURL = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appId}&redirect_uri=${cbURL}&response_type=code&scope=snsapi_userinfo&state=auth#wechat_redirect`;
-// 判断微信平台
-const ua = navigator.userAgent.toLowerCase();
-const isWechat = /micromessenger/.test(ua);
-// AJAX请求
-const ajax = {
-  get(url) {
-    return new Promise((resolve, reject) => {
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", url);
-      xhr.send();
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const res = JSON.parse(xhr.response);
-            if (!res.code) resolve(res.data);
-            else reject(res);
-          }
-        }
-      };
-    });
-  },
-};
-// 解析URL的query参数
-function query() {
-  const map = {};
-  const params = window.location.search.substring(1).split("&");
-  params.forEach((item) => {
-    const temp = item.split("=");
-    map[temp[0]] = temp[1];
-  });
-  return map;
-}
+const scan = document.getElementById("scan");
+const scanres = document.getElementById("scanres");
+
 // 初始化用户信息
 let UserInfo = {
   openId: "",
   UserName: "",
   UserPhoto: "",
 };
-// 声明完以上内容，开始获取URL上的参数
+// 按钮点击事件，获取主动授权
+const handleAuth = () => {
+  if (!auth) {
+    window.location.replace(authURL);
+  }
+};
+authBtn.addEventListener("click", handleAuth);
+// 微信扫一扫事件
+const handlescan = () => {
+  wx.scanQRCode({
+    needResult: 0,
+    scanType: ["qrCode", "barCode"],
+    success: function (res) {
+      scanres.innerHTML = res.resultStr;
+    },
+  });
+};
+
 // 判断用户是否曾经主动授权过
 const auth = localStorage.getItem("Auth") || query().state || "";
 const code = query().code || "";
@@ -62,11 +46,29 @@ if (isWechat) {
   if (code === lastCode || !code) {
     window.location.replace(shareURL);
   } else {
-    // 1是静默授权，0是主动授权
+    // 调用微信SDK设置右上角分享，开启扫一扫
+    initWxSDK().then((wx) => {
+      const params = {
+        title: "测试分享",
+        desc: "这里是描述",
+        link: shareURL,
+        imgUrl: "",
+      };
+      wx.updateAppMessageShareData(params);
+      wx.updateTimelineShareData(params);
+      wx.onMenuShareWeibo(params);
+      showOpenTag();
+      scan.addEventListener("click", handlescan);
+    });
+    // 网页授权，1是静默授权，0是主动授权
     ajax
-      .get(`http://127.0.0.1:3000/auth?code=${code}&type=${auth ? 0 : 1}`)
+      .get(
+        `${location.protocol}//${
+          location.hostname
+        }:3000/auth?code=${code}&type=${auth ? 0 : 1}`
+      )
       .then((res) => {
-        console.log(res);
+        console.log("用户基本信息：", res);
         UserInfo.openId = res.openId;
         if (res.UserName && res.UserPhoto) {
           UserInfo.UserName = res.UserName;
@@ -83,10 +85,3 @@ if (isWechat) {
       .catch((e) => console.log(e.message));
   }
 }
-// 按钮点击事件，获取主动授权
-const handleAuth = () => {
-  if (!auth) {
-    window.location.replace(authURL);
-  }
-};
-authBtn.addEventListener("click", handleAuth);

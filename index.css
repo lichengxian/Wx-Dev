@@ -3,6 +3,7 @@
   font-size: 16px;
   line-height: 24px;
 }
+/* 主动授权 */
 .authBtn {
   padding: 0;
   outline: none;
@@ -24,7 +25,6 @@
   padding-bottom: 40px;
   border: 1px solid black;
   margin: 30px auto;
-  display: block;
 }
 .list div {
   width: 100%;
@@ -49,4 +49,34 @@
   border: 1px solid black;
   background-repeat: no-repeat;
   background-size: contain;
+}
+/* 开放标签 */
+.wxOpenTag {
+  position: fixed;
+  z-index: 99999;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+/* 扫一扫 */
+.scan{
+  margin: 30px auto;
+  width: 150px;
+  height: 50px;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: greenyellow;
+  border-radius: 5px;
+}
+.scanres{
+  width: 280px;
+  padding: 10px;
+  border: 1px solid black;
+  margin: 30px auto;
+  min-height: 24px;
 }
